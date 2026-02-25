@@ -98,6 +98,28 @@ Predator-Prey-Archetype-Gridworld-Environment/
 
 ---
 
+---
+
+## 🧠 System Architecture Overview
+
+<p align="center">
+  <img src="miscellenous/imgs/PPAGE_overview.png" alt="PPAGE Architecture Overview" width="600"/>
+</p>
+
+The diagram above illustrates the architectural separation between:
+
+- 🔒 **Core (red)** – immutable environment dynamics  
+- 👁️ **Observations (orange)** – pluggable perception modules  
+- 🎯 **Rewards (orange)** – pluggable reward logic  
+-  **Actions (orange)** – pluggable action space 
+- 🔌 **Registry (yellow)** – safe module registration layer  
+- ▶️ **Scripts (green)** – experiment entry points  
+- 🎛️ **Configs (blue)** – YAML-based experiment definitions  
+
+This separation enforces reproducibility, modularity, and research safety by design.
+
+---
+
 ## Features
 
 ### Fully Interpretable

@@ -1,0 +1,7 @@
+algorithm:
+  name: iql
+  params:
+    alpha: 0.1
+    gamma: 0.99
+    epsilon: 0.1
+    episodes: 1000

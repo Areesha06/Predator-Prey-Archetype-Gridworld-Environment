@@ -48,6 +48,7 @@ Crucially, students and contributors **do not modify environment internals**. In
 ```text
 Predator-Prey-Archetype-Gridworld-Environment/
 ├── src/
+    ├── baselines
 │   └── multi_agent_package/
 │
 │       ├── core/                   # 🔒 IMMUTABLE CORE (DO NOT EDIT)

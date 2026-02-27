@@ -1,177 +1,243 @@
 # 🐾 Multi-Agent Package
 
-The `multi_agent_package` implements the Predator–Prey GridWorld environment.
+### The Environment Layer
+
+This package implements the **predator–prey GridWorld environment**.
 
 It defines:
 
-- Environment dynamics (physics)
-- Observation plug-ins (perception)
-- Reward plug-ins (incentives)
-- Registry system (safe modular selection)
-- Experiment scripts (orchestration)
+* 🟥 Evironment dynamics (core dynamics)
+* 🟧 Perception (observations)
+* 🟨 Incentives (rewards)
+* 🔌 Safe plug-in registry
+* ▶ Experiment orchestration
 
-This package does **not** contain learning algorithms.
+It does **not** implement learning algorithms.
 
-Learning lives in the separate `baselines` module.
+Learning lives in `baselines/`.
 
 ---
 
 # 🧠 Conceptual Model
 
-The system follows a strict layered structure:
-
+```text
+Environment dynamics → Perception → Incentives → Learning
 ```
-
-Physics → Perception → Incentives → Learning
-
-````
 
 This package implements:
 
-- **Physics** (Core)
-- **Perception** (Observations)
-- **Incentives** (Rewards)
+```
+Environment dynamics → Perception → Incentives
+```
 
 Learning is external.
 
 ---
 
-# 🏗 Architecture
-
-## Structural View
+# 🏗 Structural Overview
 
 ```mermaid
-flowchart TD
+flowchart LR
 
+    Scripts --> Core
     Scripts --> Registry
+
     Registry --> Observations
     Registry --> Rewards
-    Scripts --> Core
+
     Core --> Observations
     Core --> Rewards
-````
+```
 
-* Scripts build the environment
+### Dependency Direction
+
+* Scripts construct the environment
 * Registry selects plug-ins
-* Core executes environment logic
-* Observations and rewards extend behavior safely
+* Core runs transitions
+* Observations build agent views
+* Rewards compute scalar signals
 
-Dependencies flow in one direction only.
+All dependencies flow **one direction only**.
 
 ---
 
-## Execution Flow
+# 🔁 Execution Flow
 
 ```mermaid
 sequenceDiagram
 
     participant Script
     participant Env
+    participant Reward
     participant Obs
-    participant Rew
     participant Algo
 
     Script->>Env: Build environment
-    Script->>Env: Attach Obs & Rew
     Script->>Algo: Instantiate algorithm(env)
 
-    Algo->>Env: step(actions)
-    Env->>Env: Update physics
-    Env->>Rew: Apply reward logic
-    Env->>Obs: Build observations
-    Env-->>Algo: Return obs, reward
+    loop Each Step
+        Algo->>Env: step(actions)
+        Env->>Env: Update Environment dynamics
+        Env->>Reward: Compute reward
+        Env->>Obs: Build observations
+        Env-->>Algo: obs, reward, done
+    end
 ```
 
-Algorithms only call:
+Algorithms see only:
 
 ```python
 env.reset()
 env.step(actions)
 ```
 
-They never access internal state directly.
+No internal state access.
 
 ---
 
-# 📂 Structure
+# 📂 Directory Structure
 
-```
+```text
 multi_agent_package/
-├── core/           # Environment dynamics
-├── observations/   # Perception plug-ins
-├── rewards/        # Incentive plug-ins
-├── registry/       # Plug-in lookup
-├── scripts/        # Experiment orchestration
-└── README.md
+│
+├── core/                 🟥 IMMUTABLE Environment dynamics
+│   ├── gridworld.py
+│   ├── agent.py
+│
+├── observations/         🟧 PERCEPTION PLUG-INS
+│   ├── base.py
+│   ├── default.py
+│   ├── local_only.py
+│   ├── local_radius.py
+│
+├── rewards/              🟨 INCENTIVE PLUG-INS
+│   ├── base.py
+│   ├── base_reward.py
+│   ├── predator_distance.py
+│   ├── survival_reward.py
+│
+├── registry/             🔌 SAFE LOOKUP
+│   ├── reward_registry.py
+│   ├── observation_registry.py
+│
+├── scripts/              ▶ ENTRY POINTS
+│   ├── run_from_config.py
+│   ├── render.py
+│   ├── evaluate.py
+│   ├── sweep.py
 ```
 
 ---
 
-# 🔒 Core
+# 🟥 Core (Environment dynamics Layer)
 
 Defines:
 
 * Grid construction
 * Agent movement
+* Collision handling
 * Capture rules
 * Episode termination
 * Rendering
 * Seeding
 
-Core logic is stable infrastructure and should not be modified for experiments.
+Core is stable infrastructure.
+
+It should **not** be modified for experiments.
 
 ---
 
-# 👁 Observations
+# 🟧 Observations (Perception Layer)
 
-Define what each agent perceives.
+Define what agents can see.
 
 Examples:
 
-* Full state
-* Local-only
-* Radius-based partial observability
+* `default` — full state
+* `local_only` — self state only
+* `local_radius` — partial observability
 
-Observation builders must be pure and deterministic.
+Observation builders must:
+
+* Be deterministic
+* Be pure
+* Not modify environment state
+
+They transform environment state → agent observations.
 
 ---
 
-# 🎯 Rewards
+# 🟨 Rewards (Incentive Layer)
 
-Define incentive shaping.
+Define what agents optimize.
+
+Examples:
+
+* `base_reward` — capture-based
+* `predator_distance` — shaping via distance
+* `survival_reward` — time-based incentive
 
 Reward functions must:
 
 * Be pure
 * Not modify environment state
-* Only compute scalar values
+* Return scalar values
+
+They transform state → scalar signals.
 
 ---
 
 # 🔌 Registry
 
-Provides name-based plug-in selection:
+Plug-ins are selected by name.
 
 ```python
-get_observation_builder("local_only")
+get_observation_builder("local_radius")
 get_reward_function("predator_distance")
 ```
 
-Enables YAML-driven configuration.
+This enables:
+
+* YAML-driven experiments
+* Safe modular swapping
+* No manual wiring
 
 ---
 
-# ▶ Scripts
+# 🎛 Configuration-Driven Design
 
-Responsible for:
+Experiments are defined in `configs/`.
 
-* Loading configs
-* Building agents
-* Constructing environment
-* Attaching wrappers
-* Launching training
+Example:
 
-No learning logic exists here.
+```yaml
+env:
+  grid_size: 7
+  seed: 42
+
+observation:
+  name: local_radius
+
+reward:
+  name: predator_distance
+```
+
+Changing experiments means changing YAML.
+
+Not modifying core.
+
+---
+
+# 🔁 Determinism Guarantees
+
+This package guarantees:
+
+* Explicit state transitions
+* Explicit reward computation
+* Explicit observation construction
+* Seed-controlled randomness
+
+Identical configuration → identical trajectories.
 
 ---
 
@@ -179,43 +245,83 @@ No learning logic exists here.
 
 You may safely extend:
 
-* Observation plug-ins
-* Reward plug-ins
+* Observation modules
+* Reward modules
 * Experiment configurations
 
 You should not modify:
 
-* Core physics
-* Capture rules
-* Episode semantics
+* Core Environment dynamics
+* Capture semantics
+* Transition mechanics
+
+This separation enforces scientific control.
 
 ---
 
-# 🔁 Reproducibility
+# 🎯 What This Package Enables
 
-The environment guarantees:
+With this environment you can study:
 
-* Deterministic seeding
-* Explicit state transitions
-* Explicit reward computation
-* Explicit observation construction
+* Emergent cooperation
+* Coordination failure
+* Partial observability effects
+* Reward shaping impact
+* Centralized vs decentralized learning
+* Credit assignment dynamics
 
-Identical configs produce identical trajectories.
+It is intentionally:
+
+* Discrete
+* Fully inspectable
+* Mechanistically transparent
 
 ---
 
-# Summary
+# 🧠 Design Philosophy
 
-`multi_agent_package` is a modular, deterministic multi-agent environment.
+The goal is not realism.
 
-It implements:
+The goal is:
 
-**Environment dynamics + perception + incentives.**
+* Clarity
+* Modularity
+* Reproducibility
+* Research safety
 
-Learning is intentionally external.
+This is a laboratory, not a game engine.
 
+---
+
+# ▶ Running the Environment
+
+From repository root:
+
+```bash
+python -m multi_agent_package.scripts.run_from_config
+```
+
+Rendering controlled via:
+
+```yaml
+env:
+  render_mode: human
 ```
 
 ---
 
+# Final Summary
 
+`multi_agent_package` is the deterministic environment layer of the Predator–Prey Gridworld system.
+
+It implements:
+
+* Environment dynamics
+* Perception
+* Incentives
+
+Learning is intentionally external.
+
+This separation is the core architectural principle.
+
+---

@@ -10,62 +10,93 @@ from baselines.registry.algorithm_registry import register
 class IQL(BaseAlgorithm):
     """
     Tabular Independent Q-Learning.
-    One Q-table per agent.
+
+    Properties:
+    - One Q-table per agent
+    - No access to core internals
+    - Fully wrapper-compatible
+    - State encoding derived only from observation payload
     """
 
     def __init__(self, env, config):
         super().__init__(env, config)
 
+        # Hyperparameters
         self.alpha = config.get("alpha", 0.1)
         self.gamma = config.get("gamma", 0.99)
         self.epsilon = config.get("epsilon", 0.1)
         self.episodes = config.get("episodes", 500)
+        self.epsilon_decay = config.get("epsilon_decay", 1.0)
+        self.min_epsilon = config.get("min_epsilon", 0.01)
 
-        # Q-tables: {agent_name: {state_key: np.array(action_values)}}
+        # Initialize once to discover agent IDs and action size
+        initial_obs, _ = self.env.reset()
+        self.agent_ids = list(initial_obs.keys())
+
+        # Infer action dimension from first valid action selection
+        # We assume discrete actions from 0..N-1
+        test_actions = {aid: 0 for aid in self.agent_ids}
+        step_out = self.env.step(test_actions)
+
+        # Infer action dimension from observation of next state
+        # Safer approach: assume actions are integers starting at 0
+        # We determine action_dim by trying random actions
+        # but here we assume 5 unless overridden by config
+        self.action_dim = config.get("action_dim", 5)
+
+        # Q-tables
         self.q_tables = {
-            ag.agent_name: defaultdict(
-                lambda: np.zeros(ag.action_space.n)
-            )
-            for ag in self.env.agents
+            agent_id: defaultdict(lambda: np.zeros(self.action_dim))
+            for agent_id in self.agent_ids
         }
 
-    # ----------------------------
-    # State Encoding
-    # ----------------------------
+    # -------------------------------------------------
+    # State Encoding (Wrapper Safe)
+    # -------------------------------------------------
     def _encode_state(self, obs_dict):
         """
-        Minimal tabular encoding:
-        Uses only local position.
+        Convert arbitrary observation dict into hashable state.
+        Fully wrapper-compatible.
         """
-        return tuple(obs_dict["local"])
 
-    # ----------------------------
+        def recursive_convert(obj):
+            if isinstance(obj, dict):
+                return tuple(
+                    sorted((k, recursive_convert(v)) for k, v in obj.items())
+                )
+            if isinstance(obj, (list, tuple)):
+                return tuple(recursive_convert(v) for v in obj)
+            if hasattr(obj, "tolist"):
+                return tuple(obj.tolist())
+            return obj
+
+        return recursive_convert(obs_dict)
+
+    # -------------------------------------------------
     # Action Selection
-    # ----------------------------
+    # -------------------------------------------------
     def select_actions(self, observations):
         actions = {}
 
-        for agent_name, obs in observations.items():
+        for agent_id, obs in observations.items():
             state = self._encode_state(obs)
 
             if np.random.rand() < self.epsilon:
-                # explore
-                action = np.random.randint(
-                    self.env.action_space.n
-                )
+                action = np.random.randint(self.action_dim)
             else:
-                q_vals = self.q_tables[agent_name][state]
+                q_vals = self.q_tables[agent_id][state]
                 action = int(np.argmax(q_vals))
 
-            actions[agent_name] = action
+            actions[agent_id] = action
 
         return actions
 
-    # ----------------------------
+    # -------------------------------------------------
     # Training Loop
-    # ----------------------------
+    # -------------------------------------------------
     def train(self):
         for ep in range(self.episodes):
+
             obs, _ = self.env.reset()
             done = False
 
@@ -78,24 +109,30 @@ class IQL(BaseAlgorithm):
                 rewards = step_out["reward"]
                 done = step_out["terminated"] or step_out["trunc"]
 
-                # Q updates per agent
-                for agent_name in obs.keys():
-                    s = self._encode_state(obs[agent_name])
-                    a = actions[agent_name]
-                    r = rewards[agent_name]
-                    s_next = self._encode_state(next_obs[agent_name])
+                # Independent Q-updates
+                for agent_id in self.agent_ids:
+                    s = self._encode_state(obs[agent_id])
+                    a = actions[agent_id]
+                    r = rewards[agent_id]
+                    s_next = self._encode_state(next_obs[agent_id])
 
-                    q_current = self.q_tables[agent_name][s][a]
-                    q_next_max = np.max(self.q_tables[agent_name][s_next])
+                    q_current = self.q_tables[agent_id][s][a]
+                    q_next_max = np.max(self.q_tables[agent_id][s_next])
 
                     td_target = r + self.gamma * q_next_max
                     td_error = td_target - q_current
 
-                    self.q_tables[agent_name][s][a] += (
+                    self.q_tables[agent_id][s][a] += (
                         self.alpha * td_error
                     )
 
                 obs = next_obs
+
+            # Epsilon decay
+            self.epsilon = max(
+                self.min_epsilon,
+                self.epsilon * self.epsilon_decay
+            )
 
 
 register("iql", IQL)

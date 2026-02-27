@@ -36,12 +36,12 @@ Most MARL environments:
 This project exists to enforce something stricter:
 
 ```text
-Physics → Perception → Incentives → Learning
+Evironment dynamics → Perception → Incentives → Learning
 ```
 
 Each layer is isolated by construction.
 
-* **Physics** defines what can happen
+* **Evironment dynamics** defines what can happen
 * **Perception** defines what agents know
 * **Incentives** define what agents optimize
 * **Learning** defines how they adapt
@@ -77,7 +77,7 @@ The repository is divided into two major components:
 
 Implements:
 
-* Grid physics
+* Grid Evironment dynamics
 * Agent movement
 * Capture logic
 * Episode termination
@@ -129,7 +129,7 @@ This is enforced, not assumed.
 src/
 ├── baselines/                # Learning algorithms
 └── multi_agent_package/      # Environment
-    ├── core/                 # Immutable physics
+    ├── core/                 # Immutable Evironment dynamics
     ├── observations/         # Perception plug-ins
     ├── rewards/              # Incentive plug-ins
     ├── registry/             # Safe plug-in selection
@@ -138,7 +138,7 @@ src/
 configs/                      # YAML experiment definitions
 ```
 
-Core physics is stable infrastructure.
+Core Evironment dynamics is stable infrastructure.
 
 Observations and rewards are the intended extension points.
 
@@ -188,7 +188,7 @@ You are encouraged to:
 * Run structured experiments
 * Perform reproducible ablations
 
-You are not expected to modify core physics.
+You are not expected to modify core Evironment dynamics.
 
 This mirrors how research infrastructure is structured in practice.
 

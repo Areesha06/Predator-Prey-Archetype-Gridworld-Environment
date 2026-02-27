@@ -13,8 +13,7 @@ import traceback
 
 # Ensure baselines register themselves
 import baselines
-import inspect
-# print("Baselines module file:", inspect.getfile(baselines))
+
 
 from baselines.registry import get, list_algorithms
 from multi_agent_package.core.agent import Agent
@@ -29,12 +28,13 @@ def build_test_env():
     agents = [
         Agent(agent_type="predator", agent_team="predator_1", agent_name="pred_1"),
         Agent(agent_type="prey", agent_team="prey_1", agent_name="prey_1"),
+        Agent(agent_type="predator", agent_team="predator_2", agent_name="pred_2")
     ]
 
     env = GridWorldEnv(
         agents=agents,
-        size=4,               # small grid
-        perc_num_obstacle=0,  # no obstacles for clean learning
+        size=8,               # small grid
+        perc_num_obstacle=10,  # no obstacles for clean learning
         render_mode=None,
         seed=42,
     )
@@ -53,7 +53,7 @@ def test_algorithm(algo_name):
         "alpha": 0.1,
         "gamma": 0.99,
         "epsilon": 0.2,
-        "episodes": 10,       # very small test
+        "episodes": 100,       # very small test
         "cql_alpha": 0.1      # used only by CQL
     }
 

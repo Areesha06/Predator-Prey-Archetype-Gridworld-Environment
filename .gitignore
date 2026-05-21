@@ -1,6 +1,7 @@
 # Ignore VS Code settings
 .vscode/
 
+wiki/
 
 site/
 

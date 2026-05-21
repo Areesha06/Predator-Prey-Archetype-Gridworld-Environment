@@ -33,4 +33,4 @@ class BaseAlgorithm(ABC):
                 actions = self.select_actions(obs)
                 step_out = self.env.step(actions)
                 obs = step_out["obs"]
-                done = step_out["terminated"] or step_out["trunc"]
+                done = step_out["terminated"] or step_out["truncated"]

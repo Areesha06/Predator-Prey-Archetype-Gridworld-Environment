@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from baselines.iql.iql import IQL
+from baselines.IQL.iql import IQL
 from baselines.registry.algorithm_registry import register
 
 
@@ -28,7 +28,7 @@ class CQL(IQL):
 
                 next_obs = step_out["obs"]
                 rewards = step_out["reward"]
-                done = step_out["terminated"] or step_out["trunc"]
+                done = step_out["terminated"] or step_out["truncated"]
 
                 for agent_name in obs.keys():
                     s = self._encode_state(obs[agent_name])
@@ -39,8 +39,8 @@ class CQL(IQL):
                     q_vals = self.q_tables[agent_name][s]
 
                     q_current = q_vals[a]
-                    q_next_max = np.max(
-                        self.q_tables[agent_name][s_next]
+                    q_next_max = (
+                        0.0 if done else np.max(self.q_tables[agent_name][s_next])
                     )
 
                     td_target = r + self.gamma * q_next_max

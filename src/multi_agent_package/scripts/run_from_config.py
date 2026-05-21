@@ -98,6 +98,9 @@ def build_environment(configs: dict) -> GridWorldEnv:
 
     agents = build_agents(agent_cfg)
 
+    dynamics = env_cfg["env"].get("dynamics", {})
+    termination = env_cfg["env"].get("termination", {})
+
     env = GridWorldEnv(
         agents=agents,
         size=env_cfg["env"]["size"],
@@ -105,6 +108,10 @@ def build_environment(configs: dict) -> GridWorldEnv:
         render_mode=env_cfg["env"]["render_mode"],
         window_size=env_cfg["env"]["window_size"],
         seed=env_cfg["env"]["seed"],
+        allow_cell_sharing=dynamics.get("allow_cell_sharing", True),
+        block_agents_by_obstacles=dynamics.get("block_agents_by_obstacles", True),
+        capture_threshold=termination.get("capture_threshold", 1),
+        max_steps=termination.get("max_steps", None),
     )
 
     # -----------------------------

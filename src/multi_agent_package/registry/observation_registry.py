@@ -20,7 +20,7 @@ _OBSERVATION_REGISTRY: dict[str, Type[ObservationBuilder]] = {
     "default": DefaultObservation,
     "local_only": LocalOnlyObservation,
     "local_radius": LocalRadiusObservation,
-    "aboslute": AbsoluteObservation,
+    "absolute": AbsoluteObservation,
     "relative": RelativeObservation
 }
 

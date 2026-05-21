@@ -66,6 +66,10 @@ class GridWorldEnv(gym.Env):
         perc_num_obstacle: float = 30.0,
         window_size: int = 600,
         seed: Optional[int] = None,
+        capture_threshold: int = 1,
+        max_steps: Optional[int] = None,
+        allow_cell_sharing: bool = True,
+        block_agents_by_obstacles: bool = True,
     ) -> None:
         assert render_mode is None or render_mode in self.metadata["render_modes"]
 
@@ -96,10 +100,16 @@ class GridWorldEnv(gym.Env):
         self._captures_total = 0
         self._captures_this_step = 0
         self._captured_agents: List[str] = []
+        self._captured_this_step: List[str] = []
+        self._capturing_predators: set = set()
+
+        # dynamics config
+        self.capture_threshold: int = int(capture_threshold)
+        self.max_steps: Optional[int] = max_steps
 
         # behavior flags (configurable)
-        self.allow_cell_sharing: bool = True
-        self.block_agents_by_obstacles: bool = True
+        self.allow_cell_sharing: bool = allow_cell_sharing
+        self.block_agents_by_obstacles: bool = block_agents_by_obstacles
 
         # extension hooks (students plug logic here)
         self.reward_fn = None
@@ -120,14 +130,16 @@ class GridWorldEnv(gym.Env):
         self._captures_total = 0
         self._captures_this_step = 0
         self._captured_agents.clear()
+        self._captured_this_step = []
+        self._capturing_predators = set()
         self._agents_location.clear()
 
-        # assign unique start positions
+        # assign unique start positions without collision
         all_positions = [(x, y) for x in range(self.size) for y in range(self.size)]
         self.rng.shuffle(all_positions)
 
-        for ag in self.agents:
-            pos = np.array(self.rng.choice(all_positions), dtype=np.int32)
+        for i, ag in enumerate(self.agents):
+            pos = np.array(all_positions[i], dtype=np.int32)
             ag._agent_location = pos.copy()
             ag._start_location = pos.copy()
             self._agents_location.append(pos.copy())
@@ -198,18 +210,18 @@ class GridWorldEnv(gym.Env):
         step_cost = 5.0
 
         obstacle_positions = {tuple(o) for o in self._obstacle_location}
-        captured = set(self._captured_agents)
+        captured_this_step = set(self._captured_this_step)
 
         for ag in self.agents:
             r = 0.0
 
             if ag.agent_type.startswith("predator"):
-                if ag.agent_name in captured:
+                if ag.agent_name in self._capturing_predators:
                     r += capture_reward
                 r -= step_cost
 
             if ag.agent_type.startswith("prey"):
-                if ag.agent_name in captured:
+                if ag.agent_name in captured_this_step:
                     r -= capture_reward
 
             if tuple(ag._agent_location) in obstacle_positions:
@@ -224,24 +236,30 @@ class GridWorldEnv(gym.Env):
     # ------------------------------------------------------------------
     def step(self, action: Dict[str, int]) -> Dict[str, object]:
         self._captures_this_step = 0
-        self._captured_agents.clear()
+        self._captured_this_step = []
+        self._capturing_predators = set()
 
-        # movement
+        obstacle_set = {tuple(o) for o in self._obstacle_location}
+        already_captured = set(self._captured_agents)
+
+        # movement — skip prey already captured in prior steps
         for ag in self.agents:
+            if ag.agent_name in already_captured:
+                continue
             a = action.get(ag.agent_name, 4)
             direction = ag._actions_to_directions[a]
             candidate = np.clip(ag._agent_location + direction, 0, self.size - 1)
 
-            if self.block_agents_by_obstacles:
-                if tuple(candidate) in map(tuple, self._obstacle_location):
-                    continue
+            if self.block_agents_by_obstacles and tuple(candidate) in obstacle_set:
+                continue
 
             ag._agent_location = candidate.copy()
 
-        # capture detection
+        # capture detection — exclude already-captured prey
         pos_map: Dict[Tuple[int, int], List[Agent]] = {}
         for ag in self.agents:
-            pos_map.setdefault(tuple(ag._agent_location), []).append(ag)
+            if ag.agent_name not in already_captured:
+                pos_map.setdefault(tuple(ag._agent_location), []).append(ag)
 
         for agents_here in pos_map.values():
             predators = [a for a in agents_here if a.agent_type.startswith("predator")]
@@ -250,10 +268,11 @@ class GridWorldEnv(gym.Env):
             if predators and preys:
                 for prey in preys:
                     self._captures_this_step += 1
-                    self._captured_agents.append(prey.agent_name)
+                    self._captured_this_step.append(prey.agent_name)
                 for p in predators:
-                    self._captured_agents.append(p.agent_name)
+                    self._capturing_predators.add(p.agent_name)
 
+        self._captured_agents.extend(self._captured_this_step)
         self._captures_total += self._captures_this_step
         self._episode_steps += 1
 
@@ -265,7 +284,10 @@ class GridWorldEnv(gym.Env):
             for k in rewards:
                 rewards[k] += custom.get(k, 0.0)
 
-        terminated = self._captures_total >= 1
+        terminated = self._captures_total >= self.capture_threshold
+        truncated = (
+            self.max_steps is not None and self._episode_steps >= self.max_steps
+        )
 
         if self.render_mode == "human":
             self._render_frame()
@@ -274,7 +296,7 @@ class GridWorldEnv(gym.Env):
             "obs": self._build_observations(),
             "reward": rewards,
             "terminated": terminated,
-            "trunc": False,
+            "truncated": truncated,
             "info": self._get_info(),
         }
 
@@ -290,9 +312,7 @@ class GridWorldEnv(gym.Env):
     def _render_frame(self) -> Optional[np.ndarray]:
 
         if self.render_mode != "human":
-          return None
-        
-       
+            return None
 
         if self.window is None:
             pygame.init()

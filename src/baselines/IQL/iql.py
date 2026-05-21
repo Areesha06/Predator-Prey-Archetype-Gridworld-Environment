@@ -2,6 +2,7 @@
 
 import numpy as np
 from collections import defaultdict
+from numpy.random import default_rng
 
 from baselines.base import BaseAlgorithm
 from baselines.registry.algorithm_registry import register
@@ -29,19 +30,13 @@ class IQL(BaseAlgorithm):
         self.epsilon_decay = config.get("epsilon_decay", 1.0)
         self.min_epsilon = config.get("min_epsilon", 0.01)
 
-        # Initialize once to discover agent IDs and action size
+        # seeded RNG for reproducible exploration
+        self.rng = default_rng(config.get("seed", None))
+
+        # Initialize once to discover agent IDs
         initial_obs, _ = self.env.reset()
         self.agent_ids = list(initial_obs.keys())
 
-        # Infer action dimension from first valid action selection
-        # We assume discrete actions from 0..N-1
-        test_actions = {aid: 0 for aid in self.agent_ids}
-        step_out = self.env.step(test_actions)
-
-        # Infer action dimension from observation of next state
-        # Safer approach: assume actions are integers starting at 0
-        # We determine action_dim by trying random actions
-        # but here we assume 5 unless overridden by config
         self.action_dim = config.get("action_dim", 5)
 
         # Q-tables
@@ -81,8 +76,8 @@ class IQL(BaseAlgorithm):
         for agent_id, obs in observations.items():
             state = self._encode_state(obs)
 
-            if np.random.rand() < self.epsilon:
-                action = np.random.randint(self.action_dim)
+            if self.rng.random() < self.epsilon:
+                action = int(self.rng.integers(self.action_dim))
             else:
                 q_vals = self.q_tables[agent_id][state]
                 action = int(np.argmax(q_vals))
@@ -107,7 +102,7 @@ class IQL(BaseAlgorithm):
 
                 next_obs = step_out["obs"]
                 rewards = step_out["reward"]
-                done = step_out["terminated"] or step_out["trunc"]
+                done = step_out["terminated"] or step_out["truncated"]
 
                 # Independent Q-updates
                 for agent_id in self.agent_ids:
@@ -117,7 +112,9 @@ class IQL(BaseAlgorithm):
                     s_next = self._encode_state(next_obs[agent_id])
 
                     q_current = self.q_tables[agent_id][s][a]
-                    q_next_max = np.max(self.q_tables[agent_id][s_next])
+                    q_next_max = (
+                        0.0 if done else np.max(self.q_tables[agent_id][s_next])
+                    )
 
                     td_target = r + self.gamma * q_next_max
                     td_error = td_target - q_current

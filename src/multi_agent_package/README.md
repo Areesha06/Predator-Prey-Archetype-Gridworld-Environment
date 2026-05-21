@@ -6,7 +6,7 @@ This package implements the **predator–prey GridWorld environment**.
 
 It defines:
 
-* 🟥 Evironment dynamics (core dynamics)
+* 🟥 Environment dynamics (core dynamics)
 * 🟧 Perception (observations)
 * 🟨 Incentives (rewards)
 * 🔌 Safe plug-in registry
@@ -107,6 +107,8 @@ multi_agent_package/
 ├── observations/         🟧 PERCEPTION PLUG-INS
 │   ├── base.py
 │   ├── default.py
+│   ├── absolute.py
+│   ├── relative.py
 │   ├── local_only.py
 │   ├── local_radius.py
 │
@@ -122,6 +124,9 @@ multi_agent_package/
 │
 ├── scripts/              ▶ ENTRY POINTS
 │   ├── run_from_config.py
+│   ├── run_iql.py
+│   ├── run_cql.py
+│   ├── run_mixed.py
 │   ├── render.py
 │   ├── evaluate.py
 │   ├── sweep.py
@@ -153,9 +158,11 @@ Define what agents can see.
 
 Examples:
 
-* `default` — full state
-* `local_only` — self state only
-* `local_radius` — partial observability
+* `default` — full global state (distances to all entities)
+* `absolute` — world-frame coordinates for all agents
+* `relative` — egocentric coordinates (offsets from self)
+* `local_only` — own position only
+* `local_radius` — partial observability within a Manhattan radius
 
 Observation builders must:
 
@@ -211,15 +218,24 @@ Experiments are defined in `configs/`.
 Example:
 
 ```yaml
+# configs/env.yaml
 env:
-  grid_size: 7
+  size: 10
   seed: 42
 
-observation:
-  name: local_radius
+# configs/observations.yaml
+observations:
+  type: local_radius
+  params:
+    radius: 3
 
-reward:
-  name: predator_distance
+# configs/rewards.yaml
+rewards:
+  base:
+    enabled: true
+  shaping:
+    - name: predator_distance
+      weight: 0.5
 ```
 
 Changing experiments means changing YAML.

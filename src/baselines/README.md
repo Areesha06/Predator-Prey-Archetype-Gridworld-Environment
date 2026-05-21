@@ -106,11 +106,14 @@ The algorithm controls:
 baselines/
 │
 ├── base.py            # BaseAlgorithm interface
+├── __init__.py        # Auto-registers IQL, CQL, MixedTrainer
 ├── registry/          # Algorithm registry
 │
-├── iql/               # Independent Q-Learning
+├── IQL/               # Independent Q-Learning  (iql.py + CLI)
 │
-├── cql/               # Centralized Q-Learning
+├── CQL/               # Centralized Q-Learning  (cql.py + CLI)
+│
+├── MIXED/             # MixedTrainer — per-team IQL/CQL  (mix_train.py + CLI)
 │
 └── README.md
 ```
@@ -160,7 +163,7 @@ Algorithms must:
 
 ## 🟪 CQL — Centralized Q-Learning (Tabular)
 
-* Joint state-action table
+* Joint state-action table shared across agents
 * Centralized learning signal
 * Suitable for small state spaces
 
@@ -168,7 +171,20 @@ Algorithms must:
 
 * Coordination-heavy tasks
 * Small grid sizes
-* Studying centralized vs decentralized gaps
+* Studying centralized vs decentralized learning gaps
+
+---
+
+## 🟫 MixedTrainer — Per-Team Algorithm Assignment
+
+* Predators and prey can use different algorithms (IQL or CQL)
+* Configured via `predator_algo` / `prey_algo` params
+* Useful for asymmetric baselines
+
+### When to Use
+
+* Studying predator-prey algorithm asymmetry
+* Ablations where one team is centralized, the other is not
 
 ---
 
@@ -195,11 +211,15 @@ Training configuration is external.
 Example:
 
 ```yaml
-algorithm:
-  name: iql
-  epsilon: 0.1
-  alpha: 0.5
-  gamma: 0.99
+# configs/experiment_iql.yaml
+experiment:
+  algorithm:
+    name: iql
+    params:
+      epsilon: 1.0
+      alpha: 0.1
+      gamma: 0.99
+      episodes: 1000
 ```
 
 Changing learning behavior requires changing configuration — not environment code.
@@ -258,13 +278,19 @@ It is optimized for understanding.
 
 # ▶ Running Training
 
-From repository root:
+From `src/`:
 
 ```bash
-python -m baselines.run_training
-```
+# Config-driven (reads configs/experiment_iql.yaml)
+python -m multi_agent_package.scripts.run_iql
+python -m multi_agent_package.scripts.run_cql
+python -m multi_agent_package.scripts.run_mixed
 
-(Assumes correct configuration.)
+# Direct CLI (all hyperparams as flags)
+python -m baselines.IQL.iql --episodes 1000 --save-path trained_iql.pkl
+python -m baselines.CQL.cql --episodes 1000 --cql-alpha 0.1 --save-path trained_cql.pkl
+python -m baselines.MIXED.mix_train --predator-algo cql --prey-algo iql --episodes 1000
+```
 
 ---
 

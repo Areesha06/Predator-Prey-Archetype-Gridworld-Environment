@@ -62,20 +62,38 @@ def test_algorithm(algo_name):
     print("Training...")
     algo.train()
 
-    # Check Q-table structure
+    # Check Q-table structure — each algorithm exposes tables differently
     print("Checking Q-tables...")
 
-    for agent_name, table in algo.q_tables.items():
-        print(f"Agent: {agent_name}")
-        print(f"  States learned: {len(table)}")
-
-        if len(table) == 0:
-            raise RuntimeError("Q-table empty — learning did not run.")
+    if hasattr(algo, "q_tables"):
+        # IQL: one table per agent
+        for agent_name, table in algo.q_tables.items():
+            print(f"Agent: {agent_name}")
+            print(f"  States learned: {len(table)}")
+            if len(table) == 0:
+                raise RuntimeError(f"Q-table empty for {agent_name} — learning did not run.")
+    elif hasattr(algo, "q_table"):
+        # CQL: single shared joint-state table
+        print(f"Shared joint Q-table: {len(algo.q_table)} joint states learned")
+        if len(algo.q_table) == 0:
+            raise RuntimeError("Shared Q-table empty — learning did not run.")
+    elif hasattr(algo, "_iql_tables") or hasattr(algo, "_cql_tables"):
+        # MixedTrainer: IQL per-agent + CQL per-team
+        for aid, table in getattr(algo, "_iql_tables", {}).items():
+            print(f"IQL agent {aid}: {len(table)} states")
+            if len(table) == 0:
+                raise RuntimeError(f"IQL Q-table empty for {aid}.")
+        for tk, table in getattr(algo, "_cql_tables", {}).items():
+            print(f"CQL team '{tk}': {len(table)} joint states")
+            if len(table) == 0:
+                raise RuntimeError(f"CQL joint table empty for team '{tk}'.")
+    else:
+        raise RuntimeError(f"Cannot inspect Q-tables for {algo_name}.")
 
     print("Evaluation run...")
     algo.evaluate(episodes=2)
 
-    print(f"✓ {algo_name} passed structural test.")
+    print(f"OK: {algo_name} passed structural test.")
 
 
 def main():

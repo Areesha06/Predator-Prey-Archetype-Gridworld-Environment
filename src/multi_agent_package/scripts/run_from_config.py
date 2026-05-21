@@ -41,7 +41,10 @@ def load_yaml(path: Path) -> dict:
         return yaml.safe_load(f)
 
 
-def load_all_configs(config_dir: str = "configs") -> dict:
+def load_all_configs(
+    config_dir: str = "configs",
+    experiment_file: str = "experiment.yaml",
+) -> dict:
     base = REPO_ROOT / config_dir
 
     return {
@@ -49,7 +52,7 @@ def load_all_configs(config_dir: str = "configs") -> dict:
         "agents": load_yaml(base / "agents.yaml"),
         "observations": load_yaml(base / "observations.yaml"),
         "rewards": load_yaml(base / "rewards.yaml"),
-        "experiment": load_yaml(base / "experiment.yaml"),
+        "experiment": load_yaml(base / experiment_file),
     }
 
 
@@ -167,7 +170,7 @@ def main(config_dir: str = "configs"):
 
     env = build_environment(configs)
 
-    algo_cfg = configs["experiment"]["algorithm"]
+    algo_cfg = configs["experiment"]["experiment"]["algorithm"]
 
     algo_name = algo_cfg["name"]
     algo_params = algo_cfg.get("params", {})

@@ -8,6 +8,15 @@ site/
 marl-project-venv2/
 venv/
 marl_venv/
+.new_venv/
+
+# Trained model artifacts
+*.pkl
+
+# Training run output directories
+src/baselines/IQL/*_run/
+src/baselines/CQL/*_run/
+src/baselines/MIXED/*_run/
 
 # Ignore pytest cache
 .pytest_cache/

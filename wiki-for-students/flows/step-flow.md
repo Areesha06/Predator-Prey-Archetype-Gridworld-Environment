@@ -39,8 +39,9 @@ env.step(actions)
 │     │
 │     ├── action = actions.get(agent.agent_name, 4)  ← default noop
 │     │
-│     ├── direction = _actions_to_directions[action]
-│     │   # {0:[+1, 0], 1:[0,+1], 2:[-1, 0], 3:[0,-1], 4:[0,0]}
+│     ├── direction = action_space_plugin.to_direction(action)
+│     │   #   if action_space_plugin is None → fallback to ag._actions_to_directions[action]
+│     │   # DiscreteActionSpace: {0:[+1,0], 1:[0,+1], 2:[-1,0], 3:[0,-1], 4:[0,0]}
 │     │   # NOTE: Y axis increases downward in this coordinate system.
 │     │   #   action 1 ([0,+1]) moves toward higher Y → visually downward
 │     │   #   action 3 ([0,-1]) moves toward lower Y  → visually upward

@@ -38,13 +38,16 @@ All agent moves are resolved at the same time within a step. No sequential order
 The modules `core/gridworld.py` and `core/agent.py`. These define environment physics and are never modified by contributors. See [ADR-001](../decisions/ADR-001-immutable-core.md).
 
 **Plugin**
-Any `ObservationBuilder` or `RewardFunction` subclass. Plugins are loaded at runtime via the registry and injected into the environment. They may read but must not write env state.
+Any `ObservationBuilder`, `RewardFunction`, or `ActionSpace` subclass. Plugins are loaded at runtime via the registry and injected into the environment. They may read but must not write env state.
 
 **Registry**
-A dict-based lookup table mapping string names (used in YAML) to Python classes. Two registries exist: `observation_registry` and `reward_registry`. See [ADR-002](../decisions/ADR-002-plugin-registry.md).
+A dict-based lookup table mapping string names (used in YAML) to Python classes. Three registries exist: `observation_registry`, `reward_registry`, and `action_registry`. See [ADR-002](../decisions/ADR-002-plugin-registry.md).
 
 **Callable Injection**
-The pattern where the environment holds a function pointer (`env.reward_fn`, `env.observation_builder`) rather than a class reference. The plugin's method is bound at wiring time in `run_from_config.py`. See [ADR-003](../decisions/ADR-003-callable-injection.md).
+The pattern where the environment holds a function pointer (`env.reward_fn`, `env.observation_builder`) rather than a class reference. The plugin's method is bound at wiring time in `run_from_config.py`. See [ADR-003](../decisions/ADR-003-callable-injection.md). The action space (`env.action_space_plugin`) follows the same injection pattern but is stored as an object rather than a bound method, because `to_direction()` requires an argument.
+
+**Action Space Plugin**
+An `ActionSpace` subclass that maps discrete integer actions to `[dx, dy]` direction vectors. Registered in `action_registry.py` and declared in `configs/actions.yaml`. Injected as `env.action_space_plugin` before training.
 
 **Reward Shaping**
 Additional reward signal layered on top of base rewards to guide learning. Implemented as separate `RewardFunction` subclasses combined via a closure. Does not replace base rewards.

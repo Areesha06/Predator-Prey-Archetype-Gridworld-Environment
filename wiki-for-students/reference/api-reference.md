@@ -55,8 +55,9 @@ env.close() -> None
 
 **Extension hooks (set before training):**
 ```python
-env.observation_builder = callable(env) -> Dict[str, dict]
-env.reward_fn           = callable(env) -> Dict[str, float]
+env.observation_builder  = callable(env) -> Dict[str, dict]
+env.reward_fn            = callable(env) -> Dict[str, float]
+env.action_space_plugin  = ActionSpace   # object with .to_direction(int) -> np.ndarray
 ```
 
 ---

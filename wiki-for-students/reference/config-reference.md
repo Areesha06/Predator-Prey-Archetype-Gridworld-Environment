@@ -136,6 +136,27 @@ rewards:
 
 ---
 
+## actions.yaml
+
+```yaml
+actions:
+  type: discrete_5   # str — registry key; see table below
+  params: {}         # dict — passed as **kwargs to ActionSpace.__init__
+```
+
+**Available action space types:**
+
+| Key | Class | Actions |
+|-----|-------|---------|
+| `discrete_5` | `DiscreteActionSpace` | RIGHT `[+1,0]`, UP `[0,+1]`, LEFT `[-1,0]`, DOWN `[0,-1]`, NOOP `[0,0]` |
+
+**Notes:**
+- `params` is optional; `DiscreteActionSpace` accepts no parameters
+- Any key not in `action_registry` raises `KeyError` at runtime
+- `env.action_space_plugin.n_actions` is the authoritative source for `action_dim`; update `experiment.yaml`'s `action_dim` manually when switching action spaces
+
+---
+
 ## experiment.yaml / experiment_iql.yaml / experiment_cql.yaml / experiment_mixed.yaml
 
 ```yaml

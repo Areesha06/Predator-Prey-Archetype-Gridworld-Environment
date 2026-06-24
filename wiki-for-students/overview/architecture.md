@@ -20,12 +20,14 @@ The system is organized into four horizontal layers. Each layer depends only on 
 └──────────────────────────────┬──────────────────────────────────┘
                                │ env.step(actions) / env.reset()
 ┌──────────────────────────────▼──────────────────────────────────┐
-│  Layer 2 — Plugins (Observations + Rewards)                     │
+│  Layer 2 — Plugins (Observations + Rewards + Actions)           │
 │  multi_agent_package/observations/   multi_agent_package/rewards/│
-│  Responsibility: transform env state into agent percepts and     │
-│                  scalar signals                                  │
+│  multi_agent_package/actions/                                   │
+│  Responsibility: transform env state into agent percepts,        │
+│                  scalar signals, and movement vectors            │
 │  Interface: ObservationBuilder.build(env) → Dict[str, dict]     │
 │             RewardFunction.compute(env) → Dict[str, float]      │
+│             ActionSpace.to_direction(int) → np.ndarray          │
 └──────────────────────────────┬──────────────────────────────────┘
                                │ bound to env at init time
 ┌──────────────────────────────▼──────────────────────────────────┐
@@ -59,9 +61,13 @@ src/
 │   │   ├── base_reward.py        # Wraps hardcoded env rewards
 │   │   ├── predator_distance.py  # -dist_to_nearest_prey shaping
 │   │   └── survival_reward.py    # +weight per step for prey
+│   ├── actions/
+│   │   ├── base.py               # ActionSpace (abstract)
+│   │   └── discrete_actions.py   # DiscreteActionSpace — 5 actions (R/U/L/D/Noop)
 │   ├── registry/
 │   │   ├── observation_registry.py
-│   │   └── reward_registry.py
+│   │   ├── reward_registry.py
+│   │   └── action_registry.py
 │   └── scripts/
 │       ├── run_from_config.py    # Main entrypoint
 │       ├── evaluate.py           # Metrics collection (per-agent returns + ep lengths)
@@ -85,6 +91,7 @@ configs/
 ├── agents.yaml
 ├── observations.yaml
 ├── rewards.yaml
+├── actions.yaml
 ├── experiment.yaml          # default (IQL)
 ├── experiment_iql.yaml
 ├── experiment_cql.yaml
@@ -123,6 +130,8 @@ tests/
    │   ├── [get_reward_function(name, weight) for each]
    │   │   combined = closure summing all reward outputs
    │   │   env.reward_fn = combined
+   │   ├── get_action_space(type, **params)  → space
+   │   │   env.action_space_plugin = space
    │   └── returns wired env
    │
    └── AlgorithmClass(env, **hyper_params).train()
@@ -135,11 +144,11 @@ algorithm.select_actions(obs)  →  actions: Dict[str, int]
           │
           ▼
 env.step(actions)
-   ├── for each agent: compute new_pos via action
+   ├── for each agent: action_space_plugin.to_direction(a) ← plugged-in action space
    ├── validate moves (bounds + obstacles)
    ├── apply positions simultaneously
    ├── detect captures (predator+prey same cell)
-   ├── env.reward_fn(env)          ← plugged-in reward closure
+   ├── env.reward_fn(env)           ← plugged-in reward closure
    ├── check termination
    ├── env.observation_builder(env) ← plugged-in builder
    └── return (obs, rewards, terminated, truncated, info)
@@ -152,12 +161,13 @@ algorithm  (updates internal Q-tables via train loop)
 
 ## Extension Points
 
-The architecture has three explicit extension points:
+The architecture has four explicit extension points:
 
 | Extension Point | Where | How |
 |----------------|-------|-----|
 | Custom observation | `observations/` | Subclass `ObservationBuilder`, implement `build(env)`, register in `observation_registry.py` |
 | Custom reward | `rewards/` | Subclass `RewardFunction`, implement `compute(env)`, register in `reward_registry.py` |
+| Custom action space | `actions/` | Subclass `ActionSpace`, implement `to_direction()` + properties, register in `action_registry.py` |
 | Custom algorithm | `baselines/` | Subclass `BaseAlgorithm`, implement `select_actions()` + `train()`, register in `algorithm_registry.py` |
 
 ---
@@ -169,6 +179,7 @@ run_from_config.py
     ├── gridworld.py  ←  agent.py
     ├── observation_registry.py  ←  [all observation builders]
     ├── reward_registry.py       ←  [all reward functions]
+    ├── action_registry.py       ←  [DiscreteActionSpace, ...]
     └── algorithm_registry.py   ←  [IQL, CQL, MixedTrainer]
 
 gridworld.py

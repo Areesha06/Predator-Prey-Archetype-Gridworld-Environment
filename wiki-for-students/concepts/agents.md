@@ -37,7 +37,7 @@ Agent identity is set at construction and never changes. The environment modifie
 
 ## Action Space
 
-`gymnasium.spaces.Discrete(5)`:
+`gymnasium.spaces.Discrete(5)` — defined by the `DiscreteActionSpace` plugin:
 
 | Index | Label | Direction Vector | Visual movement |
 |-------|-------|-----------------|-----------------|
@@ -48,6 +48,8 @@ Agent identity is set at construction and never changes. The environment modifie
 | 4 | Noop  | `[ 0,  0]` | Stay |
 
 **Coordinate system caveat:** The origin `[0,0]` is at the top-left; Y increases downward. The code assigns the label "Up" to the vector `[0,+1]` (which moves the agent toward higher Y, i.e., visually *downward* on screen). The label and visual direction are inverted for actions 1 and 3. When reading agent behavior, reason from the **direction vectors**, not the action labels.
+
+The action-to-direction mapping is owned by the active `ActionSpace` plugin (`env.action_space_plugin`). See [concepts/actions.md](actions.md).
 
 ---
 

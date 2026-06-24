@@ -23,6 +23,7 @@ from multi_agent_package.core.agent import Agent
 from multi_agent_package.registry import (
     get_observation_builder,
     get_reward_function,
+    get_action_space,
 )
 
 # -------------------------------------------------
@@ -52,6 +53,7 @@ def load_all_configs(
         "agents": load_yaml(base / "agents.yaml"),
         "observations": load_yaml(base / "observations.yaml"),
         "rewards": load_yaml(base / "rewards.yaml"),
+        "actions": load_yaml(base / "actions.yaml"),
         "experiment": load_yaml(base / experiment_file),
     }
 
@@ -98,6 +100,7 @@ def build_environment(configs: dict) -> GridWorldEnv:
     agent_cfg = configs["agents"]
     obs_cfg = configs["observations"]
     reward_cfg = configs["rewards"]
+    action_cfg = configs["actions"]
 
     agents = build_agents(agent_cfg)
 
@@ -157,6 +160,14 @@ def build_environment(configs: dict) -> GridWorldEnv:
         return total
 
     env.reward_fn = combined_reward
+
+    # -----------------------------
+    # Attach Action Space
+    # -----------------------------
+    action_type = action_cfg["actions"]["type"]
+    action_params = action_cfg["actions"].get("params", {})
+
+    env.action_space_plugin = get_action_space(action_type, **action_params)
 
     return env
 

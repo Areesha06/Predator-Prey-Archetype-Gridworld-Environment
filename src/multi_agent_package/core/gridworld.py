@@ -114,6 +114,7 @@ class GridWorldEnv(gym.Env):
         # extension hooks (students plug logic here)
         self.reward_fn = None
         self.observation_builder = None
+        self.action_space_plugin = None
 
     # ------------------------------------------------------------------
     # Reset
@@ -247,7 +248,11 @@ class GridWorldEnv(gym.Env):
             if ag.agent_name in already_captured:
                 continue
             a = action.get(ag.agent_name, 4)
-            direction = ag._actions_to_directions[a]
+            direction = (
+                self.action_space_plugin.to_direction(a)
+                if self.action_space_plugin is not None
+                else ag._actions_to_directions[a]
+            )
             candidate = np.clip(ag._agent_location + direction, 0, self.size - 1)
 
             if self.block_agents_by_obstacles and tuple(candidate) in obstacle_set:

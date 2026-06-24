@@ -20,6 +20,7 @@ configs/
   agents.yaml          load_all_configs(config_dir)
   observations.yaml  ──────────────────────────────► merged_configs dict
   rewards.yaml
+  actions.yaml
   experiment.yaml
          │
          ▼
@@ -49,7 +50,7 @@ configs/
     capture_threshold         = termination["capture_threshold"],
     max_steps                 = termination["max_steps"],
   )
-  → env (reward_fn=None, observation_builder=None)
+  → env (reward_fn=None, observation_builder=None, action_space_plugin=None)
          │
          ├── Wire observation ──────────────────────────────────────
          │   obs_cfg = configs["observations"]
@@ -79,9 +80,17 @@ configs/
                return total
 
              env.reward_fn = combined_reward
+
+         └── Wire action space ─────────────────────────────────────
+             action_cfg = configs["actions"]
+             space = get_action_space(
+                       action_cfg["actions"]["type"],    # e.g. "discrete_5"
+                       **action_cfg["actions"].get("params", {})
+                     )
+             env.action_space_plugin = space
                   │
                   ▼
-  env is fully wired: observation_builder ✓  reward_fn ✓
+  env is fully wired: observation_builder ✓  reward_fn ✓  action_space_plugin ✓
                   │
                   ▼
   algo_cfg = configs["experiment"]["algorithm"]
@@ -101,6 +110,7 @@ configs/
 | `env.agents` | List of N Agent instances (positions unset) |
 | `env.reward_fn` | Combined closure over all configured reward fns |
 | `env.observation_builder` | Bound method of configured observation builder |
+| `env.action_space_plugin` | Configured `ActionSpace` instance |
 | `env.rng` | Seeded `np.random.default_rng(seed)` |
 | `env.size` | Grid dimension |
 | `env._obstacle_location` | Empty list (set on first `reset()`) |
@@ -115,6 +125,7 @@ The environment is **not ready to step** until `env.reset()` is called. `reset()
 | Symptom | Likely Cause |
 |---------|-------------|
 | `KeyError: 'local_raidus'` | Typo in `observations.yaml` type field |
+| `KeyError: 'discrete_X'` | Unknown key in `actions.yaml` type field; check `action_registry.py` |
 | `TypeError: 'NoneType' is not callable` on `step()` | `reward_fn` or `observation_builder` not wired; `reset()` called before wiring |
 | `ValueError: Algorithm 'X' not registered` | `import baselines` missing before `get_algorithm()`; auto-registration never ran |
 | `KeyError: 'algorithm'` on algo lookup | Use `configs["experiment"]["algorithm"]` — one level only. `configs["experiment"]["experiment"]` is a double-nesting that does not exist. |

@@ -1,0 +1,23 @@
+# configs/experiment_dqn.yaml
+experiment:
+  algorithm:
+    name: dqn
+    params:
+      hidden_layers: [64, 64]    #user controls layers+neurons here
+      activation: relu
+      learning_rate: 0.001
+      gamma: 0.99
+      epsilon: 1.0
+      epsilon_decay: 0.995
+      min_epsilon: 0.05
+      action_dim: 5              #must equal env's action count (discrete_5)
+      buffer_size: 10000         # Replay buffer capacity
+      batch_size: 32
+      min_buffer_size: 32
+      target_update_freq: 100 #How many learning steps between target-network refreshes
+      normalize_obs: true
+      episodes: 1000
+      seed: 42
+      grad_clip: 10.0
+
+      #input_dim can also be set here but we already get it when we set our type of observation 

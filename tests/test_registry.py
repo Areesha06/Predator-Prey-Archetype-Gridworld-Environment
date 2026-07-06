@@ -65,6 +65,9 @@ class TestObservationRegistry:
             def build(self, env):
                 return {}
 
+            def encode(self, observation, env):
+                return self._vector([])
+
         register_observation("_test_obs_custom", DummyObs)
         builder = get_observation_builder("_test_obs_custom")
         assert isinstance(builder, DummyObs)
@@ -134,7 +137,7 @@ class TestRewardRegistry:
 # ------------------------------------------------------------------
 
 class TestAlgorithmRegistry:
-    def test_all_three_algorithms_registered(self):
+    def test_all_four_algorithms_registered(self):
         import baselines  # trigger registrations
         from baselines.registry.algorithm_registry import list_algorithms, get
 
@@ -142,6 +145,7 @@ class TestAlgorithmRegistry:
         assert "iql" in algos
         assert "cql" in algos
         assert "mixed" in algos
+        assert "dqn" in algos
 
     def test_get_returns_class(self):
         import baselines
@@ -149,12 +153,45 @@ class TestAlgorithmRegistry:
         from baselines.IQL.iql import IQL
         from baselines.CQL.cql import CQL
         from baselines.MIXED.mix_train import MixedTrainer
+        from baselines.DQN.dqn import DQN
 
         assert get("iql") is IQL
         assert get("cql") is CQL
         assert get("mixed") is MixedTrainer
+        assert get("dqn") is DQN
 
     def test_unknown_algorithm_raises_value_error(self):
         from baselines.registry.algorithm_registry import get
         with pytest.raises(ValueError):
             get("nonexistent_algo")
+
+
+# ------------------------------------------------------------------
+# Action registry
+# ------------------------------------------------------------------
+
+class TestActionRegistry:
+    def test_discrete_5_registered(self):
+        from multi_agent_package.registry.action_registry import get_action_space
+        sp = get_action_space("discrete_5")
+        assert sp is not None
+
+    def test_cross_registered(self):
+        from multi_agent_package.registry.action_registry import get_action_space
+        sp = get_action_space("cross")
+        assert sp.n_actions == 5
+
+    def test_speed_discrete_5_registered(self):
+        from multi_agent_package.registry.action_registry import get_action_space
+        sp = get_action_space("speed_discrete_5")
+        assert sp is not None
+
+    def test_speed_discrete_5_has_to_moves(self):
+        from multi_agent_package.registry.action_registry import get_action_space
+        sp = get_action_space("speed_discrete_5")
+        assert hasattr(sp, "to_moves") and callable(sp.to_moves)
+
+    def test_unknown_action_space_raises_key_error(self):
+        from multi_agent_package.registry.action_registry import get_action_space
+        with pytest.raises(KeyError):
+            get_action_space("nonexistent_action")

@@ -133,3 +133,43 @@ def mixed_config():
         "prey_algo": "iql",
         "seed": 0,
     }
+
+
+@pytest.fixture
+def dqn_config():
+    return {
+        "hidden_layers": [8, 8],
+        "learning_rate": 0.01,
+        "gamma": 0.99,
+        "epsilon": 0.5,
+        "epsilon_decay": 1.0,
+        "min_epsilon": 0.0,
+        "buffer_size": 200,
+        "batch_size": 8,
+        "min_replay_size": 8,
+        "target_update_interval": 5,
+        "episodes": 3,
+        "log_interval": 1,
+        "verbose": False,
+        "seed": 0,
+    }
+
+
+@pytest.fixture
+def dqn_env(one_predator_one_prey):
+    """5×5 env with local_only observation + discrete_5 actions wired for DQN."""
+    from multi_agent_package.observations.local_only import LocalOnlyObservation
+    from multi_agent_package.actions.discrete_actions import DiscreteActionSpace
+
+    env = GridWorldEnv(
+        agents=one_predator_one_prey,
+        size=5,
+        perc_num_obstacle=0,
+        render_mode=None,
+        seed=42,
+    )
+    observation_builder = LocalOnlyObservation()
+    env.observation_builder = observation_builder.build
+    env.observation_encoder = observation_builder.encode
+    env.action_space_plugin = DiscreteActionSpace()
+    return env

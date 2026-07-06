@@ -3,7 +3,7 @@ numpy
 pygame
 setuptools
 pytest
-torch.utils
+torch
 tensorboard
 black
 flake8

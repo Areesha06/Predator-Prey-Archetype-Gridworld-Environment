@@ -36,12 +36,12 @@ Most MARL environments:
 This project exists to enforce something stricter:
 
 ```text
-Evironment dynamics → Perception → Incentives → Learning
+Environment dynamics → Perception → Incentives → Learning
 ```
 
 Each layer is isolated by construction.
 
-* **Evironment dynamics** defines what can happen
+* **Environment dynamics** defines what can happen
 * **Perception** defines what agents know
 * **Incentives** define what agents optimize
 * **Learning** defines how they adapt
@@ -77,7 +77,7 @@ The repository is divided into two major components:
 
 Implements:
 
-* Grid Evironment dynamics
+* Grid Environment dynamics
 * Agent movement
 * Capture logic
 * Episode termination
@@ -92,6 +92,7 @@ Implements:
 
 * Independent Q-Learning (IQL)
 * Centralized Q-Learning (CQL)
+* MixedTrainer — per-team IQL/CQL assignment
 
 This layer defines how agents learn.
 
@@ -129,7 +130,7 @@ This is enforced, not assumed.
 src/
 ├── baselines/                # Learning algorithms
 └── multi_agent_package/      # Environment
-    ├── core/                 # Immutable Evironment dynamics
+    ├── core/                 # Immutable Environment dynamics
     ├── observations/         # Perception plug-ins
     ├── rewards/              # Incentive plug-ins
     ├── registry/             # Safe plug-in selection
@@ -138,7 +139,7 @@ src/
 configs/                      # YAML experiment definitions
 ```
 
-Core Evironment dynamics is stable infrastructure.
+Core Environment dynamics is stable infrastructure.
 
 Observations and rewards are the intended extension points.
 
@@ -188,7 +189,7 @@ You are encouraged to:
 * Run structured experiments
 * Perform reproducible ablations
 
-You are not expected to modify core Evironment dynamics.
+You are not expected to modify core Environment dynamics.
 
 This mirrors how research infrastructure is structured in practice.
 

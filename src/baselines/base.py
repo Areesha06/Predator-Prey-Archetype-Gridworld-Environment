@@ -25,12 +25,14 @@ class BaseAlgorithm(ABC):
     def train(self):
         pass
 
-    def evaluate(self, episodes: int = 5):
+    def evaluate(self, episodes: int = 5, max_steps: int = 500):
         for _ in range(episodes):
             obs, _ = self.env.reset()
             done = False
-            while not done:
+            steps = 0
+            while not done and steps < max_steps:
                 actions = self.select_actions(obs)
                 step_out = self.env.step(actions)
                 obs = step_out["obs"]
-                done = step_out["terminated"] or step_out["trunc"]
+                done = step_out["terminated"] or step_out["truncated"]
+                steps += 1

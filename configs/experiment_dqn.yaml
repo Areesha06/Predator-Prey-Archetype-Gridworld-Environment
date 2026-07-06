@@ -1,0 +1,22 @@
+experiment:
+  algorithm:
+    name: dqn
+    params:
+      gamma: 0.99
+      epsilon: 1.0
+      epsilon_decay: 0.995
+      min_epsilon: 0.05
+      episodes: 1000
+      # action_dim is optional -- inferred from the env's action_space_plugin
+      # if omitted; set it explicitly to fail fast on a stale value after
+      # changing configs/actions.yaml.
+      batch_size: 32
+      buffer_size: 10000
+      min_replay_size: 32
+      target_update_interval: 100
+      learning_rate: 0.001
+      hidden_layers: [128, 128]
+      grad_clip: 5.0
+      seed: 42
+      device: "cpu"
+      curves_path: "training_curves_dqn.csv"

@@ -8,7 +8,7 @@ import copy
 import yaml
 from pathlib import Path
 
-from multi_agent_package.scripts.run_from_config import run
+from multi_agent_package.scripts.run_from_config import main as run
 
 
 def sweep(param_name, values):

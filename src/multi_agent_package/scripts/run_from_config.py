@@ -23,7 +23,9 @@ from multi_agent_package.core.agent import Agent
 from multi_agent_package.registry import (
     get_observation_builder,
     get_reward_function,
+    get_action_space,
 )
+from multi_agent_package.wrappers.speed import SpeedWrapper
 
 # -------------------------------------------------
 # Paths
@@ -41,7 +43,10 @@ def load_yaml(path: Path) -> dict:
         return yaml.safe_load(f)
 
 
-def load_all_configs(config_dir: str = "configs") -> dict:
+def load_all_configs(
+    config_dir: str = "configs",
+    experiment_file: str = "experiment.yaml",
+) -> dict:
     base = REPO_ROOT / config_dir
 
     return {
@@ -49,7 +54,8 @@ def load_all_configs(config_dir: str = "configs") -> dict:
         "agents": load_yaml(base / "agents.yaml"),
         "observations": load_yaml(base / "observations.yaml"),
         "rewards": load_yaml(base / "rewards.yaml"),
-        "experiment": load_yaml(base / "experiment.yaml"),
+        "actions": load_yaml(base / "actions.yaml"),
+        "experiment": load_yaml(base / experiment_file),
     }
 
 
@@ -95,8 +101,12 @@ def build_environment(configs: dict) -> GridWorldEnv:
     agent_cfg = configs["agents"]
     obs_cfg = configs["observations"]
     reward_cfg = configs["rewards"]
+    action_cfg = configs["actions"]
 
     agents = build_agents(agent_cfg)
+
+    dynamics = env_cfg["env"].get("dynamics", {})
+    termination = env_cfg["env"].get("termination", {})
 
     env = GridWorldEnv(
         agents=agents,
@@ -105,6 +115,10 @@ def build_environment(configs: dict) -> GridWorldEnv:
         render_mode=env_cfg["env"]["render_mode"],
         window_size=env_cfg["env"]["window_size"],
         seed=env_cfg["env"]["seed"],
+        allow_cell_sharing=dynamics.get("allow_cell_sharing", True),
+        block_agents_by_obstacles=dynamics.get("block_agents_by_obstacles", True),
+        capture_threshold=termination.get("capture_threshold", 1),
+        max_steps=termination.get("max_steps", None),
     )
 
     # -----------------------------
@@ -119,6 +133,7 @@ def build_environment(configs: dict) -> GridWorldEnv:
     )
 
     env.observation_builder = observation_builder.build
+    env.observation_encoder = observation_builder.encode
 
     # -----------------------------
     # Attach Reward Wrapper(s)
@@ -148,6 +163,21 @@ def build_environment(configs: dict) -> GridWorldEnv:
 
     env.reward_fn = combined_reward
 
+    # -----------------------------
+    # Attach Action Space
+    # -----------------------------
+    action_type = action_cfg["actions"]["type"]
+    action_params = action_cfg["actions"].get("params", {})
+
+    env.action_space_plugin = get_action_space(action_type, **action_params)
+
+    # -----------------------------
+    # Speed wrapper (must wrap last: it proxies unknown attributes to the
+    # inner env via __getattr__, so observation_encoder/action_space_plugin
+    # must already be attached above for the proxy to expose them)
+    # -----------------------------
+    env = SpeedWrapper(env)
+
     return env
 
 
@@ -160,7 +190,7 @@ def main(config_dir: str = "configs"):
 
     env = build_environment(configs)
 
-    algo_cfg = configs["experiment"]["algorithm"]
+    algo_cfg = configs["experiment"]["experiment"]["algorithm"]
 
     algo_name = algo_cfg["name"]
     algo_params = algo_cfg.get("params", {})

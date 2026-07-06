@@ -25,6 +25,7 @@ from multi_agent_package.registry import (
     get_reward_function,
     get_action_space,
 )
+from multi_agent_package.wrappers.speed import SpeedWrapper
 
 # -------------------------------------------------
 # Paths
@@ -132,6 +133,7 @@ def build_environment(configs: dict) -> GridWorldEnv:
     )
 
     env.observation_builder = observation_builder.build
+    env.observation_encoder = observation_builder.encode
 
     # -----------------------------
     # Attach Reward Wrapper(s)
@@ -168,6 +170,13 @@ def build_environment(configs: dict) -> GridWorldEnv:
     action_params = action_cfg["actions"].get("params", {})
 
     env.action_space_plugin = get_action_space(action_type, **action_params)
+
+    # -----------------------------
+    # Speed wrapper (must wrap last: it proxies unknown attributes to the
+    # inner env via __getattr__, so observation_encoder/action_space_plugin
+    # must already be attached above for the proxy to expose them)
+    # -----------------------------
+    env = SpeedWrapper(env)
 
     return env
 

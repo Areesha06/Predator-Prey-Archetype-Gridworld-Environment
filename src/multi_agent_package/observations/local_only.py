@@ -5,6 +5,7 @@ Agents observe ONLY their own position.
 """
 
 from multi_agent_package.observations.base import ObservationBuilder
+import numpy as np
 
 
 class LocalOnlyObservation(ObservationBuilder):
@@ -22,3 +23,6 @@ class LocalOnlyObservation(ObservationBuilder):
             }
 
         return obs
+
+    def encode(self, observation: dict, env) -> np.ndarray:
+        return self._vector(observation.get("local", []))

@@ -117,7 +117,7 @@ class DQN(BaseAlgorithm):
 
             self.target_networks[aid].copy_weights_from(self.q_networks[aid])
 
-            self.buffers[aid] = ReplayBuffer(self.buffer_size, seed=net_seed)
+            self.buffers[aid] = ReplayBuffer(self.buffer_size, state_dim=self.input_dim, seed=net_seed)
             self._train_step_counts[aid] = 0
 
     # ------------------------------------------------------------------

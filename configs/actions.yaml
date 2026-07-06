@@ -1,3 +1,4 @@
 actions:
-  type: discrete_5
+  # type: discrete_5
+  type: cross
   params: {}

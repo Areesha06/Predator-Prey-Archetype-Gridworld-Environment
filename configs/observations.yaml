@@ -1,9 +1,10 @@
 observations:
+
+  # type: local_only
   # params:
   #   include_agents: true
   #   include_obstacles: true
   #   radius: 3
-  # type: local_only
   per_agent:
     predator:
       radius: 4
@@ -16,3 +17,6 @@ observations:
     include_obstacles: false
     include_walls: false
     distance_type: manhattan
+
+  # type: local_only
+  # params: {}

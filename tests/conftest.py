@@ -133,3 +133,22 @@ def mixed_config():
         "prey_algo": "iql",
         "seed": 0,
     }
+
+@pytest.fixture
+def dqn_config():
+    return {
+        "hidden_layers": [8, 8],
+        "activation": "relu",
+        "learning_rate": 0.01,
+        "gamma": 0.99,
+        "epsilon": 0.5,
+        "epsilon_decay": 1.0,
+        "min_epsilon": 0.0,
+        "action_dim": 5,
+        "buffer_size": 200,
+        "batch_size": 8,
+        "min_buffer_size": 8,
+        "target_update_freq": 1,
+        "episodes": 3,
+        "seed": 0,
+    }

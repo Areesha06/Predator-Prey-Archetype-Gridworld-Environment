@@ -278,6 +278,15 @@ class TestDQNEncodeState:
         s = algo._encode_state(obs)
         np.testing.assert_allclose(s, [3.0, -2.0])
 
+    def test_encoder_produces_numeric_vector(self):
+        env = make_env()
+        algo = DQN(env, base_config())
+        obs, _ = env.reset()
+        encoded = algo._encode_observation(obs["pred_1"])
+        assert encoded.dtype == np.float32
+        assert encoded.ndim == 1
+        assert encoded.shape[0] == algo.state_di
+
 
 # ------------------------------------------------------------------
 # Action selection

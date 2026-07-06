@@ -211,3 +211,30 @@ class TestEndToEndMixed:
         # At least one table must be populated
         all_tables = list(algo._iql_tables.values()) + list(algo._cql_tables.values())
         assert any(len(t) > 0 for t in all_tables)
+
+
+
+# ------------------------------------------------------------------
+# End-to-end training: DQN
+# ------------------------------------------------------------------
+
+
+class TestEndToEndDQN:
+    def test_dqn_trains_without_error(self):
+        from multi_agent_package.scripts.run_from_config import load_all_configs, build_environment
+        import baselines
+        from baselines.DQN.dqn import DQN
+
+        configs = load_all_configs(experiment_file="experiment_dqn.yaml")
+        configs["env"]["env"]["render_mode"] = None
+        env = build_environment(configs)
+
+        params = configs["experiment"]["experiment"]["algorithm"].get("params", {})
+        params["episodes"] = 2
+        params["min_replay_size"] = params.get("min_buffer_size", 8)
+
+        algo = DQN(env, params)
+        algo.train()
+
+        for aid in algo.agent_ids:
+            assert len(algo.buffers[aid]) > 0

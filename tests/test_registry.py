@@ -142,6 +142,7 @@ class TestAlgorithmRegistry:
         assert "iql" in algos
         assert "cql" in algos
         assert "mixed" in algos
+        # assert "dqn" in algos
 
     def test_get_returns_class(self):
         import baselines
@@ -158,3 +159,15 @@ class TestAlgorithmRegistry:
         from baselines.registry.algorithm_registry import get
         with pytest.raises(ValueError):
             get("nonexistent_algo")
+
+
+    def test_dqn_registered(self):
+        import baselines
+        from baselines.registry.algorithm_registry import list_algorithms
+        assert "dqn" in list_algorithms()
+
+    def test_get_dqn_returns_class(self):
+        import baselines
+        from baselines.registry.algorithm_registry import get
+        from baselines.DQN.dqn import DQN
+        assert get("dqn") is DQN

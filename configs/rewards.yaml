@@ -2,15 +2,15 @@ rewards:
   base:
     enabled: false               # wraps env.base_reward()
 
-  # shaping:
-  #   - name: predator_distance
-  #     weight: 0.5
-  #     applies_to: predator
+  shaping:
+    - name: predator_distance
+      weight: 0.5
+      applies_to: predator
 
-  #   - name: survival
-  #     weight: 1.0
-  #     applies_to: prey
+    - name: survival
+      weight: 1.0
+      applies_to: prey
 
-  shaping: []
+  # shaping: []
   normalization:
     enabled: false

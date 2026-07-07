@@ -1,0 +1,20 @@
+experiment:
+  algorithm:
+    name: dqn
+    params:
+      learning_rate: 0.001           # Adam learning rate
+      gamma: 0.99                    # discount factor
+      epsilon: 1.0                   # start fully random
+      epsilon_decay: 0.998           # slowed: reaches ~0.02 floor at ~1900 episodes so both agents explore together longer
+      min_epsilon: 0.05              # floor for exploration
+      action_dim: 5                  # must match actions.yaml's plugin (discrete_5/cross/speed_discrete_5 are all 5-action)
+
+      batch_size: 32
+      buffer_size: 10000
+      target_update_interval: 100
+
+      hidden_layers: [64, 64]
+      episodes: 2000                 # 500 was not enough; 2000 gives DQN time to converge with shaped rewards
+      seed: 42
+      device: "cpu"
+      curves_path: "training_curves_demo_speed.csv"

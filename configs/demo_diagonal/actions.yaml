@@ -1,0 +1,7 @@
+actions:
+  # "Diagonal" movement: NE, NW, SW, SE, NOOP -- registered as "cross" in the
+  # action registry (CrossActionSpace) because the four diagonals form an X/
+  # cross shape, NOT because it's the +-shaped cardinal set. Don't confuse
+  # this with "Plus" (discrete_5) when presenting.
+  type: cross
+  params: {}

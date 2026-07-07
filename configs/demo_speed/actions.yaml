@@ -1,0 +1,8 @@
+actions:
+  # Speed-based movement: same 5 cardinal directions as "Plus", but agents
+  # with agent_speed > 1 (see agents.yaml) get replayed as multiple sub-steps
+  # per logical step via SpeedWrapper (wired into every experiment
+  # automatically in build_environment -- this YAML value doesn't turn speed
+  # on/off, agent_speed in agents.yaml does).
+  type: speed_discrete_5
+  params: {}

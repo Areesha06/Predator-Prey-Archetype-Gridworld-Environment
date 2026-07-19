@@ -1,0 +1,4 @@
+actions:
+  # "Plus" movement: RIGHT, UP, LEFT, DOWN, NOOP -- the +-shaped cardinal set.
+  type: discrete_5
+  params: {}

@@ -1,0 +1,16 @@
+agents:
+  predators:
+    count: 1
+    base_type: predator
+    speed: 1              # equal speed: isolates movement-type (not speed) as the variable
+    stamina: 9999
+
+  preys:
+    count: 1
+    base_type: prey
+    speed: 1
+    stamina: 9999
+
+  naming:
+    predator_prefix: predator
+    prey_prefix: prey

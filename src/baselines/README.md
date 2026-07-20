@@ -117,6 +117,8 @@ baselines/
 │
 ├── DQN/               # Deep Q-Network, PyTorch (dqn.py + CLI, q_network.py, replay_buffer.py)
 │
+├── A2C/               # Advantage Actor-Critic (a2c.py + actor_network.py + critic_network.py)
+│
 └── README.md
 ```
 
@@ -208,6 +210,30 @@ Algorithms must:
 * Function-approximation baseline instead of tabular Q-learning
 * Larger observation spaces where tabular state encoding becomes impractical
 * Studying Double/Dueling DQN variants against vanilla DQN
+
+---
+
+## 🟩 A2C — Advantage Actor-Critic
+
+* One actor (policy network) + one critic (state-value network) per agent
+* On-policy: no replay buffer -- learns directly from freshly-collected experience,
+  discarding it after each update  
+* Learns two things at once instead of one:
+  * The actor learns *what to do* (a probability distribution over actions)
+  * The critic learns *how good a state is* (a baseline used to reduce variance
+    in the actor's gradient, without introducing bias)
+* Exploration comes from sampling the stochastic policy (plus an entropy
+  bonus that discourages the policy from collapsing too early) -- there is no
+  epsilon schedule
+
+
+### When to Use
+
+* Studying on-policy vs off-policy learning dynamics
+* Environments/rewards where a stochastic policy is itself interesting
+  (e.g. mixed-strategy pursuit-evasion)
+* As the natural stepping stone toward A3C (parallel workers) and SAC
+  (off-policy actor-critic with entropy maximization)
 
 ---
 
